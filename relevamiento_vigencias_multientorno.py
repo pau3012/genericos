@@ -1178,8 +1178,19 @@ def procesar_fila_producto(driver, row):
         except ProductoNoEncontrado:
             fallidos.append(f"{cod}: no encontrado en Tourplan")
         except Exception as e:
-            fallidos.append(f"{cod}: error inesperado ({e})")
-            ss(driver, f"error_{cod[:10]}")
+            # WebDriverException y similares suelen traer un str(e) vacío o
+            # sólo direcciones de memoria del binario de chromedriver (nada
+            # útil para diagnosticar) — se guarda el traceback completo a
+            # disco junto con screenshot + HTML de la página en ese momento,
+            # y en OBSERVACIONES sólo el nombre del archivo para ir a mirarlo.
+            ts_err = int(time.time())
+            nombre_err = f"error_{cod[:10]}_{ts_err}"
+            log_path = f"{SS_DIR}/{nombre_err}.txt"
+            with open(log_path, "w", encoding="utf-8") as f:
+                f.write(traceback.format_exc())
+            fallidos.append(f"{cod}: {type(e).__name__} — ver {log_path}")
+            ss(driver, nombre_err)
+            dump(driver, nombre_err)
 
     observaciones = f"{len(filas_vigencias)} período(s) exportado(s) de {len(items)} código(s)"
     if fallidos:
