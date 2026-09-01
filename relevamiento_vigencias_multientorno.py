@@ -198,6 +198,17 @@ from openpyxl.utils import get_column_letter
 # su posición numérica en el sidebar de Product Search) van juntos acá
 # porque no se pueden mezclar entre entornos.
 #
+# BASE_URL: el script arma cada URL como f"{BASE_URL}#/login" (sin
+# agregar ninguna "/" en el medio) — así que BASE_URL tiene que
+# terminar en algo que, seguido de "#/...", dé una URL válida. Esto
+# varía según cómo esté servida la app en cada instalación: algunas
+# resuelven la ruta "pelada" (ahí BASE_URL termina en "/", ej. TEST más
+# abajo); otras exigen "index.html" explícito en la URL (ahí BASE_URL
+# termina en "/index.html", sin barra final, ej. NUEVO). Si al cambiar
+# de entorno la app queda en blanco / nunca aparece el resto de la UI
+# (timeout esperando cualquier selector), lo primero a revisar es esto
+# — confirmar navegando a mano en el browser qué URL carga la app.
+#
 # STYPE_SIDEBAR (compatibilidad con _completar_filtros_busqueda): si un
 # service type tiene posición numérica confirmada por inspección real
 # del sidebar de ESE entorno, se arma automáticamente más abajo a
@@ -209,7 +220,7 @@ ENTORNOS = {
     # Entorno original (STYPE_SIDEBAR confirmado por inspección real —
     # ver script hermano extraccion_tarifas_vigentes.py).
     "TEST": {
-        "BASE_URL": "https://tourplannx.eurotur.com.ar/TourplanNX_Test",
+        "BASE_URL": "https://tourplannx.eurotur.com.ar/TourplanNX_Test/",
         "USERNAME": "poner minusculas",
         "PASSWORD": "password",
         "SERVICE_TYPES": {
@@ -227,7 +238,7 @@ ENTORNOS = {
     # acá mismo (ej. "AC": ("01", "Accommodation")) para que la
     # selección en el sidebar sea más robusta.
     "NUEVO": {
-        "BASE_URL": "PONER_URL_DEL_NUEVO_ENTORNO",
+        "BASE_URL": "https://la-perwel.nx.tourplan.net/TourplanNX/index.html",
         "USERNAME": "poner minusculas",
         "PASSWORD": "password",
         "SERVICE_TYPES": {
@@ -353,7 +364,7 @@ def crear_driver():
 
 def login(driver):
     print("🔐 Login...")
-    driver.get(f"{BASE_URL}/#/login")
+    driver.get(f"{BASE_URL}#/login")
     time.sleep(6 * VELOCIDAD)
     ss(driver, "login_page")
 
@@ -457,7 +468,7 @@ def logout(driver):
         """)
 
     try:
-        driver.get(f"{BASE_URL}/#/home")
+        driver.get(f"{BASE_URL}#/home")
         time.sleep(4 * VELOCIDAD)
         ss(driver, "logout_home")
 
@@ -546,9 +557,9 @@ class ProductoNoEncontrado(Exception):
 def _completar_filtros_busqueda(driver, location, supplier, codigo, service_type):
     st_upper = (service_type or "").strip().upper()
 
-    driver.get(f"{BASE_URL}/#/home")
+    driver.get(f"{BASE_URL}#/home")
     time.sleep(2 * VELOCIDAD)
-    driver.get(f"{BASE_URL}/#/product")
+    driver.get(f"{BASE_URL}#/product")
     time.sleep(5 * VELOCIDAD)
 
     lupa = wait(driver, "#searchWrapper li:nth-of-type(2) button")
