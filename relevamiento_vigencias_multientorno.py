@@ -48,11 +48,14 @@
 #   SELECCIÓN DE PERÍODO — sin ordenar nada: Tourplan ya devuelve la
 #   lista de períodos del más reciente al más viejo. Por fila de la
 #   cola de entrada:
-#     - RATE FROM/RATE TO vacíos → se exporta sólo el primer período de
-#       la lista tal cual la entrega Tourplan (el "último"/vigencia más
-#       nueva).
-#     - RATE FROM/RATE TO completos → se exportan TODOS los períodos
-#       que se solapen con ese rango (puede ser más de uno).
+#     - RATE FROM/RATE TO vacíos → se exporta el primer período de la
+#       lista tal cual la entrega Tourplan (el "último"/vigencia más
+#       nueva) — y TODAS las filas de ese mismo período (un período
+#       puede tener más de una fila, una por Price Code, con el mismo
+#       Rate Period).
+#     - RATE FROM/RATE TO completos → se exportan TODAS las filas de
+#       TODOS los períodos que se solapen con ese rango (puede ser más
+#       de uno, cada uno con sus filas por Price Code).
 #
 #   COLA DE TRABAJO EXCEL (openpyxl, ESTADO/OBSERVACIONES, guardado fila
 #   a fila, resumible) — ver skill armando-excel-como-cola-de-trabajo.
@@ -1031,9 +1034,10 @@ _COMENTARIOS_PRODUCTOS = {
               "(cualquier combinación, ej. SERVICE TYPE+LOCATION o SUPPLIER+CODIGO) "
               "— si no, la fila termina en ERROR sin buscar en Tourplan.",
     "RATE FROM": "ENTRADA (opcional, dd/mm/yyyy). Junto con RATE TO define un rango: "
-                 "se exportan TODOS los períodos que se solapen con él. Si ambos "
-                 "quedan vacíos, se exporta sólo el primer período de la lista tal "
-                 "cual la entrega Tourplan (el más reciente/último).",
+                 "se exportan TODAS las filas (una por Price Code) de TODOS los "
+                 "períodos que se solapen con él. Si ambos quedan vacíos, se exporta "
+                 "el período más reciente/último tal cual lo entrega Tourplan, con "
+                 "todas sus filas por Price Code.",
     "RATE TO": "ENTRADA (opcional, dd/mm/yyyy). Ver RATE FROM.",
     "ESTADO": "SALIDA. PENDIENTE = a procesar. Volver a poner PENDIENTE para reprocesar esta fila.",
     "OBSERVACIONES": "SALIDA. Detalle del resultado (cuántos períodos/códigos, o el error).",
@@ -1173,7 +1177,11 @@ def procesar_fila_producto(driver, row):
             else:
                 # Sin rango: Tourplan ya lista los períodos del más
                 # reciente al más viejo — el primero YA ES el "último".
-                idxs = [0]
+                # Un mismo período puede tener varias filas (una por
+                # Price Code) con el mismo Rate Period — se exportan
+                # todas, no sólo la primera.
+                idxs = [i for i, p in enumerate(periodos)
+                        if p["rate_period"] == periodos[0]["rate_period"]]
 
             ts = datetime.now().isoformat(timespec="seconds")
             for i in idxs:
